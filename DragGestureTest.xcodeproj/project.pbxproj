@@ -17,6 +17,8 @@
 		DD2A598F28905E8C00C5656D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A596528905E8C00C5656D /* ContentView.swift */; };
 		DD2A599028905E8C00C5656D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DD2A596628905E8C00C5656D /* Assets.xcassets */; };
 		DD2A599128905E8C00C5656D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DD2A596628905E8C00C5656D /* Assets.xcassets */; };
+		DD2A59A1289129BE00C5656D /* DragInSpecificDirection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59A0289129BE00C5656D /* DragInSpecificDirection.swift */; };
+		DD2A59A2289129BE00C5656D /* DragInSpecificDirection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59A0289129BE00C5656D /* DragInSpecificDirection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +51,7 @@
 		DD2A598428905E8C00C5656D /* Tests macOS.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Tests macOS.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD2A598828905E8C00C5656D /* Tests_macOS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests_macOS.swift; sourceTree = "<group>"; };
 		DD2A598A28905E8C00C5656D /* Tests_macOSLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests_macOSLaunchTests.swift; sourceTree = "<group>"; };
+		DD2A59A0289129BE00C5656D /* DragInSpecificDirection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragInSpecificDirection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +102,7 @@
 			children = (
 				DD2A596428905E8C00C5656D /* DragGestureTestApp.swift */,
 				DD2A596528905E8C00C5656D /* ContentView.swift */,
+				DD2A59A0289129BE00C5656D /* DragInSpecificDirection.swift */,
 				DD2A596628905E8C00C5656D /* Assets.xcassets */,
 			);
 			path = Shared;
@@ -299,6 +303,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD2A59A1289129BE00C5656D /* DragInSpecificDirection.swift in Sources */,
 				DD2A598E28905E8C00C5656D /* ContentView.swift in Sources */,
 				DD2A598C28905E8C00C5656D /* DragGestureTestApp.swift in Sources */,
 			);
@@ -308,6 +313,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD2A59A2289129BE00C5656D /* DragInSpecificDirection.swift in Sources */,
 				DD2A598F28905E8C00C5656D /* ContentView.swift in Sources */,
 				DD2A598D28905E8C00C5656D /* DragGestureTestApp.swift in Sources */,
 			);
