@@ -17,7 +17,8 @@
 /// - Perhaps this can be improved somehow, to make the condition only apply before offset reaches abs(50). After that, the condition will cease to apply.
 ///
 /// Expand in one direction
-/// - Expansion could be done by increasing width/height of the card, while also increasing x/y offset of the card by the current expansion divided by 2.
+/// - Expansion is done by increasing width/height of the card, while also increasing x/y offset of the card by the current expansion divided by 2.
+/// The tricky part is returning back to the original offset. This requires keeping a record of the original width and offset, and then reducing actual width and offset (by half speed of the width) until we reduce the view to its minWidth. At that point, we should stop moving offset, otherwise the view will begin sliding too far. To get this boundary when going left, we should take the original offset, detract half of the original view width, and add half of the view's minimum width. This is switched around when going right: take the original offset, add half of the original view width, and detract half of the view's minimum width.
 
 import SwiftUI
 
@@ -26,6 +27,10 @@ struct ContentView: View {
   @State var width: CGFloat?
   @State var height: CGFloat = 100
   @State var offset: CGSize = .zero
+  @State var originalOffset: CGSize = .zero
+  @State var originalWidth: CGFloat = 100
+
+
   var body: some View {
     ZStack {
       RedRectangle(width: width ?? minWidth)
@@ -34,16 +39,43 @@ struct ContentView: View {
           .gesture(
             DragGesture()
               .onChanged { value in
-                print(width!)
-                print(value.translation.width)
-                width = max(minWidth, width! + value.translation.width)
+                if value.translation.width < 0 {
+                  // set width. add dragged value to current width.
+                  width = max(minWidth, width! + abs(value.translation.width))
+                  // set offset. detract half of dragged width from current offset value.
+                  offset.width = offset.width - abs(value.translation.width * 0.5)
+                } else {
+                  // set width. Detract the positive value from the currently higher width.
+                  width = max(minWidth, width! - value.translation.width)
+                  // set offset. if it hits 0 (default), it should stay in place
+                  offset.width = min((originalOffset.width + originalWidth * 0.5 - minWidth * 0.5), offset.width + abs(value.translation.width * 0.5))
+                }
+              }
+              .onEnded { value in
+                originalOffset = offset
+                originalWidth = width!
               })
         Spacer()
         Resizer()
           .gesture(
             DragGesture()
               .onChanged { value in
-                width = max(minWidth, abs(width! + value.translation.width))
+                // width = max(minWidth, width! + value.translation.width)
+                if value.translation.width > 0 {
+                  // set width. add dragged value to current width.
+                  width = max(minWidth, width! + value.translation.width)
+                  // set offset. detract half of dragged width from current offset value.
+                  offset.width = offset.width + (value.translation.width * 0.5)
+                } else {
+                  // set width. Detract the positive value from the currently higher width.
+                  width = max(minWidth, width! - abs(value.translation.width))
+                  // set offset. detract value from currently higher offset. If it hits 0 (default), it should stay in place
+                  offset.width = max((originalOffset.width - originalWidth * 0.5 + minWidth * 0.5), offset.width - abs(value.translation.width * 0.5))
+                }
+              }
+              .onEnded { value in
+                originalOffset = offset
+                originalWidth = width!
               })
       }
       .frame(maxWidth: width ?? minWidth)
@@ -55,14 +87,20 @@ struct ContentView: View {
     .gesture(
       DragGesture()
         .onChanged { value in
-          withAnimation {
-            offset = value.translation
+          // offset = value.translation
+          if value.translation.width > 0 {
+            offset.width = originalOffset.width + value.translation.width
+          } else {
+            offset.width = originalOffset.width - abs(value.translation.width)
+          }
+          if value.translation.height > 0 {
+            offset.height = originalOffset.height + value.translation.height
+          } else {
+            offset.height = originalOffset.height - abs(value.translation.height)
           }
         }
         .onEnded { value in
-          withAnimation {
-            offset = .zero
-          }
+          originalOffset = offset
         })
   }
 }
@@ -73,7 +111,7 @@ struct RedRectangle: View {
   var body: some View {
     RoundedRectangle(cornerRadius: 15)
       .fill(Color.red)
-      .frame(width: width, height: 100)
+      .frame(maxWidth: width, maxHeight: 100)
   }
 }
 
