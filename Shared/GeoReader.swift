@@ -58,6 +58,7 @@ struct GeoReader: View {
   }
 
   // Calculate distance between points
+  // from https://www.hackingwithswift.com/example-code/core-graphics/how-to-calculate-the-distance-between-two-cgpoints
   func CGPointDistanceSquared(from: CGPoint, to: CGPoint) -> CGFloat {
       return (from.x - to.x) * (from.x - to.x) + (from.y - to.y) * (from.y - to.y)
   }
