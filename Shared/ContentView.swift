@@ -39,17 +39,7 @@ struct ContentView: View {
           .gesture(
             DragGesture()
               .onChanged { value in
-                if value.translation.width < 0 {
-                  // set width. add dragged value to current width.
-                  width = max(minWidth, width! + abs(value.translation.width))
-                  // set offset. detract half of dragged width from current offset value.
-                  offset.width = offset.width - abs(value.translation.width * 0.5)
-                } else {
-                  // set width. Detract the positive value from the currently higher width.
-                  width = max(minWidth, width! - value.translation.width)
-                  // set offset. if it hits 0 (default), it should stay in place
-                  offset.width = min((originalOffset.width + originalWidth * 0.5 - minWidth * 0.5), offset.width + abs(value.translation.width * 0.5))
-                }
+                calculateStretchLeading(dragPosition: value.translation)
               }
               .onEnded { value in
                 originalOffset = offset
@@ -60,18 +50,7 @@ struct ContentView: View {
           .gesture(
             DragGesture()
               .onChanged { value in
-                // width = max(minWidth, width! + value.translation.width)
-                if value.translation.width > 0 {
-                  // set width. add dragged value to current width.
-                  width = max(minWidth, width! + value.translation.width)
-                  // set offset. detract half of dragged width from current offset value.
-                  offset.width = offset.width + (value.translation.width * 0.5)
-                } else {
-                  // set width. Detract the positive value from the currently higher width.
-                  width = max(minWidth, width! - abs(value.translation.width))
-                  // set offset. detract value from currently higher offset. If it hits 0 (default), it should stay in place
-                  offset.width = max((originalOffset.width - originalWidth * 0.5 + minWidth * 0.5), offset.width - abs(value.translation.width * 0.5))
-                }
+                calculateStretchTrailing(dragPosition: value.translation)
               }
               .onEnded { value in
                 originalOffset = offset
@@ -87,22 +66,58 @@ struct ContentView: View {
     .gesture(
       DragGesture()
         .onChanged { value in
-          // offset = value.translation
-          if value.translation.width > 0 {
-            offset.width = originalOffset.width + value.translation.width
-          } else {
-            offset.width = originalOffset.width - abs(value.translation.width)
-          }
-          if value.translation.height > 0 {
-            offset.height = originalOffset.height + value.translation.height
-          } else {
-            offset.height = originalOffset.height - abs(value.translation.height)
-          }
+          getObjectOffset(dragPosition: value.translation)
         }
         .onEnded { value in
+          // add snap to grid here
+          // center to screen (offset width = 0)
+          // get height position of nearest row
+          // offset height = row height
           originalOffset = offset
         })
   }
+
+  func calculateStretchLeading(dragPosition: CGSize) {
+    if dragPosition.width < 0 {
+      // set width. add dragged value to current width.
+      width = max(minWidth, width! + abs(dragPosition.width))
+      // set offset. detract half of dragged width from current offset value.
+      offset.width = offset.width - abs(dragPosition.width * 0.5)
+    } else {
+      // set width. Detract the positive value from the currently higher width.
+      width = max(minWidth, width! - dragPosition.width)
+      // set offset. if it hits 0 (default), it should stay in place
+      offset.width = min((originalOffset.width + originalWidth * 0.5 - minWidth * 0.5), offset.width + abs(dragPosition.width * 0.5))
+    }
+  }
+
+  func calculateStretchTrailing(dragPosition: CGSize) {
+    if dragPosition.width > 0 {
+      // set width. add dragged value to current width.
+      width = max(minWidth, width! + dragPosition.width)
+      // set offset. detract half of dragged width from current offset value.
+      offset.width = offset.width + (dragPosition.width * 0.5)
+    } else {
+      // set width. Detract the positive value from the currently higher width.
+      width = max(minWidth, width! - abs(dragPosition.width))
+      // set offset. detract value from currently higher offset. If it hits 0 (default), it should stay in place
+      offset.width = max((originalOffset.width - originalWidth * 0.5 + minWidth * 0.5), offset.width - abs(dragPosition.width * 0.5))
+    }
+  }
+
+  func getObjectOffset(dragPosition: CGSize) {
+    if dragPosition.width > 0 {
+      offset.width = originalOffset.width + dragPosition.width
+    } else {
+      offset.width = originalOffset.width - abs(dragPosition.width)
+    }
+    if dragPosition.height > 0 {
+      offset.height = originalOffset.height + dragPosition.height
+    } else {
+      offset.height = originalOffset.height - abs(dragPosition.height)
+    }
+  }
+
 }
 
 struct RedRectangle: View {

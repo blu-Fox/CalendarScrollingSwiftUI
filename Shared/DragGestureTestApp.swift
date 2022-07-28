@@ -11,7 +11,8 @@ import SwiftUI
 struct DragGestureTestApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // ContentView()
+          GeoReader()
         }
     }
 }
