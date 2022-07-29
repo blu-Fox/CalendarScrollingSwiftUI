@@ -5,9 +5,6 @@
 //  Created by Jan Stehlík on 28.07.2022.
 //
 
-import SwiftUI
-
-/// Snap to place
 /// This view demonstrates how an element can be moved around, and snapped into place where needed.
 /// There are 2 options to detect the appropriate area:
 /// - 1: Check if the currect position is within the x/y bounds of the area. This is good for rectangles.
@@ -16,6 +13,9 @@ import SwiftUI
 /// - GLOBAL is for the entire screen. It is affected by ignoring safe areas.
 /// - LOCAL is for the immediate parent view of the geo reader
 /// - CUSTOM is whatever view we attach this to. Very useful.
+/// Constraints to the blue area:
+
+import SwiftUI
 
 struct GeoReader: View {
   @State private var position: CGPoint = .zero
@@ -27,6 +27,7 @@ struct GeoReader: View {
 
         // bottom layer
       VStack {
+        Text("Position: x: \(position.x), y: \(position.y)")
         HStack {
           ForEach(0..<3, id: \.self) { _ in
             RectangleView(position: $position, checkIfOverlaid: $checkIfOverlaid)
@@ -37,35 +38,18 @@ struct GeoReader: View {
             CircleView(position: $position, checkIfOverlaid: $checkIfOverlaid)
           }
         }
-
       } //: VStack
 
-        // upper layer
+        // top layer
         // using position makes the view want to grow like a ZStack
-        Circle()
-          .fill(.orange)
-          .frame(width: 40, height: 40)
-          .position(position)
-          .onAppear {
-            position = CGPoint(x: proxy.frame(in: .local).midX,
-                               y: proxy.frame(in: .local).midY + 200)
-          }
-          .gesture(
-            DragGesture()
-              .onChanged { value in
-                position = value.location
-              }
-              .onEnded { value in
-                // save new position
-                position = value.location
-                // snap to place if needed
-                checkIfOverlaid = UUID()
-              })
+        MovableCircle(position: $position, area: proxy, checkIfOverlaid: $checkIfOverlaid)
+
       }
       .background(Color.cyan)
+      
     } //: Georeader
-    .frame(height: 500)
-    .ignoresSafeArea()
+    .frame(width: 350, height: 500)
+    .aspectRatio(contentMode: .fit)
     .coordinateSpace(name: "Test")
   } //: body
 } //: struct
@@ -81,7 +65,6 @@ struct RectangleView: View {
         .foregroundColor(overlaid(position: position, frame: proxy.frame(in: .named("Test"))) ? .red : .black)
         .animation(Animation.easeIn, value: overlaid(position: position, frame: proxy.frame(in: .named("Test"))))
         .task(id: checkIfOverlaid) {
-
           // option 1: calculates if position is within CGRect. Works with rectangles.
           if overlaid(position: position, frame: proxy.frame(in: .named("Test"))) {
                       withAnimation {
@@ -91,7 +74,7 @@ struct RectangleView: View {
                     }
         }
     }
-    .frame(width: 120, height: 60)
+    .frame(width: 100, height: 60)
   }
 }
 
@@ -100,18 +83,17 @@ struct CircleView: View {
   @Binding var position: CGPoint
   @Binding var checkIfOverlaid: UUID
   @State var center: CGPoint?
-  let diameter: CGFloat = 120
+  let diameter: CGFloat = 100
 
   var body: some View {
     GeometryReader { proxy in
       Circle()
         .foregroundColor(CGPointDistance(from: position, to: center ?? .zero) < diameter/2 ? .red : .black)
-        .animation(Animation.easeIn, value: CGPointDistance(from: position, to: center ?? .zero) < diameter/2)
+        .animation(Animation.easeIn, value: CGPointDistance(from: position, to: center ?? CGPoint(x: proxy.frame(in: .named("Test")).midX, y: proxy.frame(in: .named("Test")).midY)) < diameter/2)
         .onAppear {
           center = CGPoint(x: proxy.frame(in: .named("Test")).midX, y: proxy.frame(in: .named("Test")).midY)
         }
         .task(id: checkIfOverlaid) {
-          // This use of task is not ideal, because the action also triggers on appear (see how the circles flash red)
           if let center = center {
             if CGPointDistance(from: position, to: center) < diameter/2 {
               withAnimation {
@@ -122,6 +104,43 @@ struct CircleView: View {
         }
     }
     .frame(width: diameter, height: diameter)
+  }
+}
+
+struct MovableCircle: View {
+  @Binding var position: CGPoint
+  var area: GeometryProxy
+  @Binding var checkIfOverlaid: UUID
+  var body: some View {
+    Circle()
+      .fill(.orange)
+      .frame(width: 40, height: 40)
+      .position(position)
+      .onAppear {
+        position = CGPoint(x: area.frame(in: .local).midX,
+                           y: area.frame(in: .local).midY + 200)
+      }
+      .gesture(
+        DragGesture()
+          .onChanged { value in
+            // constrain to the blue area
+            // if value.location goes beyond area.frame(in: .named("Test"))
+            // move the circle to the closest point within area.frame(in: .named("Test"))
+            if overlaid(position: value.location, frame: area.frame(in: .named("Test"))) {
+              position = value.location
+            } else {
+              // find a point closest to this one that is within the frame
+              position = furthestLocation(gesturePosition: value.location, frame: area.frame(in: .named("Test")))
+            }
+          }
+          .onEnded { value in
+            // save new position
+            if overlaid(position: value.location, frame: area.frame(in: .named("Test"))) {
+              position = value.location
+            }
+            // snap to place if needed
+            checkIfOverlaid = UUID()
+          })
   }
 }
 
@@ -142,6 +161,30 @@ func CGPointDistanceSquared(from: CGPoint, to: CGPoint) -> CGFloat {
 }
 func CGPointDistance(from: CGPoint, to: CGPoint) -> CGFloat {
   return sqrt(CGPointDistanceSquared(from: from, to: to))
+}
+
+// func 3: find a point within a frame that is closest to a given point, to constrain the circle in the given bounds
+func furthestLocation(gesturePosition: CGPoint, frame: CGRect) -> CGPoint {
+  // if x is below 0, it should be 0
+  // if x is above maxX, it should be maxX
+  // else x should remain the same
+  var x = gesturePosition.x
+  if gesturePosition.x < 0 {
+    x = 0
+  } else if gesturePosition.x > frame.maxX {
+    x = frame.maxX
+  }
+  // if y is below 0, it should be 0
+  // if y is above maxY, it should be maxY
+  // else y should remain the same
+  var y = gesturePosition.y
+  if gesturePosition.y < 0 {
+    y = 0
+  } else if gesturePosition.y > frame.maxY {
+    y = frame.maxY
+  }
+  // return point
+  return CGPoint(x: x, y: y)
 }
 
 
