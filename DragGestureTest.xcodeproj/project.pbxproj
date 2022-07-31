@@ -23,6 +23,12 @@
 		DD2A59A5289261C000C5656D /* GeoReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59A3289261C000C5656D /* GeoReader.swift */; };
 		DD2A59A7289295B500C5656D /* DragAndExpandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59A6289295B500C5656D /* DragAndExpandView.swift */; };
 		DD2A59A8289295B500C5656D /* DragAndExpandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59A6289295B500C5656D /* DragAndExpandView.swift */; };
+		DD2A59AD28956A6C00C5656D /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59AC28956A6C00C5656D /* CalendarView.swift */; };
+		DD2A59AE28956A6C00C5656D /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59AC28956A6C00C5656D /* CalendarView.swift */; };
+		DD2A59B02895983200C5656D /* EventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59AF2895983200C5656D /* EventView.swift */; };
+		DD2A59B12895983200C5656D /* EventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59AF2895983200C5656D /* EventView.swift */; };
+		DD2A59B3289598E700C5656D /* RowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59B2289598E700C5656D /* RowView.swift */; };
+		DD2A59B4289598E700C5656D /* RowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A59B2289598E700C5656D /* RowView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +64,9 @@
 		DD2A59A0289129BE00C5656D /* DragInSpecificDirection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragInSpecificDirection.swift; sourceTree = "<group>"; };
 		DD2A59A3289261C000C5656D /* GeoReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoReader.swift; sourceTree = "<group>"; };
 		DD2A59A6289295B500C5656D /* DragAndExpandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragAndExpandView.swift; sourceTree = "<group>"; };
+		DD2A59AC28956A6C00C5656D /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		DD2A59AF2895983200C5656D /* EventView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventView.swift; sourceTree = "<group>"; };
+		DD2A59B2289598E700C5656D /* RowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RowView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +120,9 @@
 				DD2A59A6289295B500C5656D /* DragAndExpandView.swift */,
 				DD2A59A0289129BE00C5656D /* DragInSpecificDirection.swift */,
 				DD2A59A3289261C000C5656D /* GeoReader.swift */,
+				DD2A59AC28956A6C00C5656D /* CalendarView.swift */,
+				DD2A59B2289598E700C5656D /* RowView.swift */,
+				DD2A59AF2895983200C5656D /* EventView.swift */,
 				DD2A596628905E8C00C5656D /* Assets.xcassets */,
 			);
 			path = Shared;
@@ -311,7 +323,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD2A59AD28956A6C00C5656D /* CalendarView.swift in Sources */,
+				DD2A59B02895983200C5656D /* EventView.swift in Sources */,
 				DD2A59A7289295B500C5656D /* DragAndExpandView.swift in Sources */,
+				DD2A59B3289598E700C5656D /* RowView.swift in Sources */,
 				DD2A59A4289261C000C5656D /* GeoReader.swift in Sources */,
 				DD2A59A1289129BE00C5656D /* DragInSpecificDirection.swift in Sources */,
 				DD2A598E28905E8C00C5656D /* ContentView.swift in Sources */,
@@ -323,7 +338,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD2A59AE28956A6C00C5656D /* CalendarView.swift in Sources */,
+				DD2A59B12895983200C5656D /* EventView.swift in Sources */,
 				DD2A59A8289295B500C5656D /* DragAndExpandView.swift in Sources */,
+				DD2A59B4289598E700C5656D /* RowView.swift in Sources */,
 				DD2A59A5289261C000C5656D /* GeoReader.swift in Sources */,
 				DD2A59A2289129BE00C5656D /* DragInSpecificDirection.swift in Sources */,
 				DD2A598F28905E8C00C5656D /* ContentView.swift in Sources */,

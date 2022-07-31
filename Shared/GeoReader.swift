@@ -13,48 +13,66 @@
 /// - GLOBAL is for the entire screen. It is affected by ignoring safe areas.
 /// - LOCAL is for the immediate parent view of the geo reader
 /// - CUSTOM is whatever view we attach this to. Very useful.
-/// Constraints to the blue area:
+///
+/// Constraints to the gray area:
+/// If gesture value exceeds given bounds, set position of the orange circle to the maximum x/y coordinates within the bounds. The other coordinate can remain the same, unless it is also out of bounds, in which case set position to maximum bounds or zero (circle will end up in the corner).
+///
+/// Gestures can be combined using .sequenced. That way, drag is enabled after longPress ends.
 
 import SwiftUI
 
 struct GeoReader: View {
-  @State private var position: CGPoint = .zero
+  // Position of the movable circle
+  @State private var circlePosition: CGPoint = .zero
+  // First variable tells us we longPressed and can start dragging automatically
+  @State private var circleWasLongPressed = false
+  // Second variable enables drag rigth away, if we already longPressed previously
+  @State private var circleIsDraggable = false
+  // Refreshing this triggers a function in child views, which checks if the movable circle overlays the child view
   @State private var checkIfOverlaid = UUID()
 
   var body: some View {
+    
     GeometryReader { proxy in
       ZStack {
 
         // bottom layer
-      VStack {
-        Text("Position: x: \(position.x), y: \(position.y)")
-        HStack {
-          ForEach(0..<3, id: \.self) { _ in
-            RectangleView(position: $position, checkIfOverlaid: $checkIfOverlaid)
+        // rectangles
+        VStack {
+          Text("Position: x: \(circlePosition.x), y: \(circlePosition.y)")
+          HStack {
+            ForEach(0..<3, id: \.self) { _ in
+              RectangleView(position: $circlePosition, checkIfOverlaid: $checkIfOverlaid)
+            }
           }
-        }
-        HStack {
-          ForEach(0..<3, id: \.self) { _ in
-            CircleView(position: $position, checkIfOverlaid: $checkIfOverlaid)
+          // circles
+          HStack {
+            ForEach(0..<3, id: \.self) { _ in
+              CircleView(position: $circlePosition, checkIfOverlaid: $checkIfOverlaid)
+            }
           }
-        }
-      } //: VStack
+        } //: VStack
 
         // top layer
         // using position makes the view want to grow like a ZStack
-        MovableCircle(position: $position, area: proxy, checkIfOverlaid: $checkIfOverlaid)
+        MovableCircle(position: $circlePosition, area: proxy, checkIfOverlaid: $checkIfOverlaid, wasLongPressed: $circleWasLongPressed, isDraggable: $circleIsDraggable)
 
       }
-      .background(Color.cyan)
-      
+      .background(Color.gray)
+      .onTapGesture {
+        // end gesture, like in iOS calendar. if draggable is true, turn off draggable and completedLongPress
+        if circleIsDraggable {
+          circleIsDraggable = false
+          circleWasLongPressed = false
+        } //: if
+      } //: on tap
     } //: Georeader
     .frame(width: 350, height: 500)
-    .aspectRatio(contentMode: .fit)
     .coordinateSpace(name: "Test")
   } //: body
 } //: struct
 
-// OPTION 1
+// OPTION 1: RECTANGLE
 struct RectangleView: View {
   @Binding var position: CGPoint
   @Binding var checkIfOverlaid: UUID
@@ -67,18 +85,18 @@ struct RectangleView: View {
         .task(id: checkIfOverlaid) {
           // option 1: calculates if position is within CGRect. Works with rectangles.
           if overlaid(position: position, frame: proxy.frame(in: .named("Test"))) {
-                      withAnimation {
-                        position = CGPoint(x: proxy.frame(in: .named("Test")).midX,
-                                         y: proxy.frame(in: .named("Test")).midY)
-                      }
-                    }
+            withAnimation {
+              position = CGPoint(x: proxy.frame(in: .named("Test")).midX,
+                                 y: proxy.frame(in: .named("Test")).midY)
+            }
+          }
         }
     }
     .frame(width: 100, height: 60)
   }
 }
 
-// OPTION 2
+// OPTION 2: CIRCLE
 struct CircleView: View {
   @Binding var position: CGPoint
   @Binding var checkIfOverlaid: UUID
@@ -111,37 +129,62 @@ struct MovableCircle: View {
   @Binding var position: CGPoint
   var area: GeometryProxy
   @Binding var checkIfOverlaid: UUID
+  @Binding var wasLongPressed: Bool
+  @Binding var isDraggable: Bool
+
   var body: some View {
-    Circle()
-      .fill(.orange)
-      .frame(width: 40, height: 40)
-      .position(position)
-      .onAppear {
-        position = CGPoint(x: area.frame(in: .local).midX,
-                           y: area.frame(in: .local).midY + 200)
-      }
-      .gesture(
-        DragGesture()
-          .onChanged { value in
-            // constrain to the blue area
-            // if value.location goes beyond area.frame(in: .named("Test"))
-            // move the circle to the closest point within area.frame(in: .named("Test"))
-            if overlaid(position: value.location, frame: area.frame(in: .named("Test"))) {
-              position = value.location
-            } else {
-              // find a point closest to this one that is within the frame
-              position = furthestLocation(gesturePosition: value.location, frame: area.frame(in: .named("Test")))
-            }
-          }
-          .onEnded { value in
-            // save new position
-            if overlaid(position: value.location, frame: area.frame(in: .named("Test"))) {
-              position = value.location
-            }
-            // snap to place if needed
-            checkIfOverlaid = UUID()
-          })
+    movableCircle
   }
+
+  var movableCircle: some View {
+      Circle()
+        .fill(.orange)
+        .opacity(wasLongPressed ? 1 : 0.5)
+        .frame(width: 40, height: 40)
+        .position(position)
+        .onAppear {
+          position = CGPoint(x: area.frame(in: .local).midX,
+                             y: area.frame(in: .local).midY + 200)
+        }
+        // first longPress, then drag. If we already longPressed and this gesture ended, we can drag straight away. Cannot be in a single ternary operator bc Gesture and SequencedGesture are different types
+        .gesture(isDraggable ? nil : longPress.sequenced(before: drag))
+        .gesture(isDraggable ? drag : nil)
+  }
+
+
+  var longPress: some Gesture {
+    LongPressGesture(minimumDuration: 1)
+//      .updating($isDetectingLongPress) { currentState, gestureState, transaction in
+//        gestureState = currentState
+//        transaction.animation = Animation.easeIn(duration: 2.0)
+//      }
+      .onEnded { value in
+        // can also write wasLongPressed = value
+        wasLongPressed = true
+      }
+  }
+
+  var drag: some Gesture {
+    DragGesture()
+      .onChanged { value in
+        // constrain to the blue area
+        // if value.location goes beyond area.frame(in: .named("Test"))
+        // move the circle to the closest point within area.frame(in: .named("Test"))
+        if overlaid(position: value.location, frame: area.frame(in: .named("Test"))) {
+          position = value.location
+        } else {
+          // find a point closest to this one that is within the frame
+          position = furthestLocation(gesturePosition: value.location, frame: area.frame(in: .named("Test")))
+        }
+      }
+      .onEnded { value in
+        // Retain drag if user returns finger back on the circle
+        isDraggable = true
+        // snap to place if needed
+        checkIfOverlaid = UUID()
+      }
+  }
+
 }
 
 // func 1: calculates if position is within CGRect. Works with rectangles.
@@ -174,9 +217,7 @@ func furthestLocation(gesturePosition: CGPoint, frame: CGRect) -> CGPoint {
   } else if gesturePosition.x > frame.maxX {
     x = frame.maxX
   }
-  // if y is below 0, it should be 0
-  // if y is above maxY, it should be maxY
-  // else y should remain the same
+  // same as x
   var y = gesturePosition.y
   if gesturePosition.y < 0 {
     y = 0

@@ -23,7 +23,6 @@ import SwiftUI
 struct DragAndExpandView: View {
   @State var minWidth: CGFloat = 100
   @State var width: CGFloat?
-  @State var height: CGFloat = 100
   @State var offset: CGSize = .zero
   @State var originalOffset: CGSize = .zero
   @State var originalWidth: CGFloat = 100
@@ -60,7 +59,7 @@ struct DragAndExpandView: View {
     .offset(offset)
     .onAppear {
       width = minWidth
-    }
+    } //: ZStack
     .gesture(
       DragGesture()
         .onChanged { value in
@@ -73,7 +72,7 @@ struct DragAndExpandView: View {
           // offset height = row height
           originalOffset = offset
         })
-  }
+  } //: body
 
   func calculateStretchLeading(dragPosition: CGSize) {
     if dragPosition.width < 0 {
@@ -116,11 +115,10 @@ struct DragAndExpandView: View {
     }
   }
 
-}
+} //: struct
 
 struct RedRectangle: View {
   let width: CGFloat
-
   var body: some View {
     RoundedRectangle(cornerRadius: 15)
       .fill(Color.red)
