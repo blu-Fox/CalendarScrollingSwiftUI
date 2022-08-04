@@ -145,6 +145,7 @@ struct MovableCircle: View {
         .onAppear {
           position = CGPoint(x: area.frame(in: .local).midX,
                              y: area.frame(in: .local).midY + 200)
+          
         }
         // first longPress, then drag. If we already longPressed and this gesture ended, we can drag straight away. Cannot be in a single ternary operator bc Gesture and SequencedGesture are different types
         .gesture(isDraggable ? nil : longPress.sequenced(before: drag))

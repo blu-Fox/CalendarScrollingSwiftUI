@@ -31,12 +31,36 @@ struct CalendarView: View {
 //          } //: ForEach
 //        } //: VStack
 //      } //: Scrollview
-        EventView(position: $eventPosition, area: proxy, checkIfOverlaid: $eventOverlaid, wasLongPressed: $eventWasLongPressed, isDraggable: $eventIsDraggable)
+        Color.gray
+        EventView(position: $eventPosition,
+                  area: proxy,
+                  checkIfOverlaid: $eventOverlaid,
+                  wasLongPressed: $eventWasLongPressed,
+                  isDraggable: $eventIsDraggable)
+
+        // test of bounds. Due to the use of GeometryReader, bounds are constrained to this view. So 0, 0 is the top left corner of the grey rectangle. This is key when constraining any child views (e.g. events) correctly.
+        Circle()
+          .frame(width: 30)
+          .position(x: 0, y: 0)
+        Circle()
+          .frame(width: 30)
+          .position(x: 0, y: 200)
+        Circle()
+          .frame(width: 30)
+          .position(x: 0, y: 400)
+
       } //: ZStack
+      .onTapGesture {
+        // end gesture, like in iOS calendar. if draggable is true, turn off draggable and completedLongPress
+        if eventIsDraggable {
+          eventIsDraggable = false
+          eventWasLongPressed = false
+        }
+      } //: on tap
     } //: GeometryReader
     .background(.green.opacity(0.2))
     .frame(width: UIScreen.main.bounds.width, height: 400)
-    // .coordinateSpace(name: "Calendar")
+    .coordinateSpace(name: "Calendar")
   }
 }
 
