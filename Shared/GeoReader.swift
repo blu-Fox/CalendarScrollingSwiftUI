@@ -12,7 +12,7 @@
 /// Frame coordinate spaces:
 /// - GLOBAL is for the entire screen. It is affected by ignoring safe areas.
 /// - LOCAL is for the immediate parent view of the geo reader
-/// - CUSTOM is whatever view we attach this to. Very useful.
+/// - CUSTOM is whatever ancestor view we attach this to. Very useful. Just remember that it should be attached to a view that contains the smaller view to be positioned.
 ///
 /// Constraints to the gray area:
 /// If gesture value exceeds given bounds, set position of the orange circle to the maximum x/y coordinates within the bounds. The other coordinate can remain the same, unless it is also out of bounds, in which case set position to maximum bounds or zero (circle will end up in the corner).

@@ -19,7 +19,7 @@ struct RowView: View {
         .padding()
     }
     .frame(height: 50)
-    .border(Color.orange)
+    .border(.black)
   }
 }
 
