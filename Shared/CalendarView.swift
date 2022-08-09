@@ -16,8 +16,7 @@ struct CalendarView: View {
   @State var eventWasLongPressed = false
   @State var eventIsDraggable = false
   @State var eventOffset: CGFloat = 0
-  @State var calendarFrame: CGRect?
-  @State var coordinateSpace: CoordinateSpace = .local
+  @State var calendarFrame: CGRect = CGRect(x: 0, y: 0, width: 0, height: 0)
 
   var body: some View {
 
@@ -45,13 +44,19 @@ struct CalendarView: View {
               // Save the offset as preference key value
               .preference(key: ScrollViewOffsetPreferenceKey.self, value: offset)
               // Record the original calendarView frame so views outside of Scrollview (specifically, draggableEventView can use it. This cannot be done outside of Scrollview. As scrollview is scrolled, this value actually changes, so we should only record it when the view first appears.
+//              .task(id: proxy.frame(in: .named("CalendarView"))) {
+//                calendarFrame = proxy.frame(in: .named("CalendarView"))
+//                  .offsetBy(dx: 0, dy: eventOffset)
+//                print("Frame set. New minY: \(calendarFrame.minY)")
+//              }
               .onAppear {
                 calendarFrame = proxy.frame(in: .named("CalendarView"))
-                coordinateSpace = .named("CalendarView")
+                  .offsetBy(dx: 0, dy: eventOffset)
+                print("Frame set. New minY: \(calendarFrame.minY)")
+                print("Area compare 1. Calendar height: \(proxy.frame(in: .named("Calendar")).height)")
+                print("Area compare 2. CalendarView height: \(calendarFrame.height)")
               }
-
 //            EventView(area: proxy,
-//                      checkIfOverlaid: $eventOverlaid,
 //                      wasLongPressed: $eventWasLongPressed,
 //                      isDraggable: $eventIsDraggable)
           } //: GeometryReader
@@ -64,17 +69,12 @@ struct CalendarView: View {
       } //: Scrollview
 
       // Once calendar frame has been recorded, we can show a draggable view
-      if let calendarFrame = calendarFrame {
-        if coordinateSpace == .named("CalendarView") {
-          DraggableEventView(parentFrame: calendarFrame,
-                             checkIfOverlaid: $eventOverlaid,
-                             wasLongPressed: $eventWasLongPressed,
-                             isDraggable: $eventIsDraggable,
-                             coordinateSpace: coordinateSpace)
-          .offset(y: eventOffset)
-        }
+      if calendarFrame != CGRect(x: 0, y: 0, width: 0, height: 0) {
+        DraggableEventView(parentFrame: $calendarFrame,
+                           wasLongPressed: $eventWasLongPressed,
+                           isDraggable: $eventIsDraggable)
+        .offset(y: eventOffset)
       }
-
     } //: ZStack with scrollview and overlay view
     .coordinateSpace(name: "CalendarView")
   } //: body

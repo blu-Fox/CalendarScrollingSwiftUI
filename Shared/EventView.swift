@@ -7,11 +7,6 @@
 
 import SwiftUI
 
-#warning("scrollview gesture conflicts with drag/stretch gestures")
-// (1) I tried using .updating and .onChange to update a specific variable when dragging/stretching. If the variable was on, scrollview would be off. However, this did not produce the intended result. After drag gesture ends, a subsequent attempt at a drag gesture scrolls the scrollview instead. Only holding for some time magically switches to the drag gesture
-// (2) I tried moving the dragged view outside of the scrollview. This seems to be the case in iOS calendar. When we drag or expand, the original view stays in scrollview and slightly loses opacity, and a bright overlay appears over the scrollview.
-// AND IT WORKS!!!1!!1!1!1!!1!1
-
 struct EventView: View {
   // Current position of the event. Will be updated once event appears
   @State var position: CGPoint = .zero
@@ -25,8 +20,6 @@ struct EventView: View {
   @State var originalPosition: CGPoint?
   // Bounds in which the object can be moved
   var area: GeometryProxy
-  // Updating this var triggers a function in other views that determines if this view overlays them
-  @Binding var checkIfOverlaid: UUID
   // Determines if the object was longPressed and can be moved around. Tapping anywhere in the parent view turns this off and makes the view unmovable (like in iOS calendar)
   @Binding var wasLongPressed: Bool
   // Determines if the view is draggable. This second var works in tandem with wasLongPressed. 2 vars are needed because there are 2 gesture modifiers, because Gesture and Sequenced Gesture are not the same type. So we cannot use a ternary operator.
@@ -168,8 +161,6 @@ struct EventView: View {
         isDraggable = true
         // reset gesture state
         gestureState = .inactive
-        // snap to place if needed
-        checkIfOverlaid = UUID()
       }
   }
 
