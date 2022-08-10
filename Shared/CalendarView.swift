@@ -15,17 +15,17 @@ struct CalendarView: View {
   @State var eventOverlaid = UUID()
   @State var eventWasLongPressed = false
   @State var eventIsDraggable = false
-  @State var eventOffset: CGFloat = 0
+  @State var calendarOffset: CGFloat = 0
   @State var calendarFrame: CGRect = CGRect(x: 0, y: 0, width: 0, height: 0)
+  // Set the visible "peeping hole" view of the calendar
+  let visibleCalendarFrame: CGFloat = 700
 
   var body: some View {
 
     ZStack {
 
       ScrollView {
-
         ZStack {
-
           VStack(spacing: 0) {
             ForEach(0..<24, id: \.self) { row in
               RowView(rowNumber: row)
@@ -41,40 +41,48 @@ struct CalendarView: View {
             // Get the offset of scrollview from the top of the frame.
             let offset = proxy.frame(in: .named("CalendarView")).minY
             Color.clear
-              // Save the offset as preference key value
+              // Save the offset of Scrollview as preference key value
               .preference(key: ScrollViewOffsetPreferenceKey.self, value: offset)
-              // Record the original calendarView frame so views outside of Scrollview (specifically, draggableEventView can use it. This cannot be done outside of Scrollview. As scrollview is scrolled, this value actually changes, so we should only record it when the view first appears.
-//              .task(id: proxy.frame(in: .named("CalendarView"))) {
-//                calendarFrame = proxy.frame(in: .named("CalendarView"))
-//                  .offsetBy(dx: 0, dy: eventOffset)
-//                print("Frame set. New minY: \(calendarFrame.minY)")
-//              }
-              .onAppear {
+            // Track changes in the offset of Scrollview
+              .onPreferenceChange(ScrollViewOffsetPreferenceKey.self) { value in
+                calendarOffset = value
+              }
+            // Record the original calendarFrame so views outside of Scrollview (specifically, draggableEventView can use it. This cannot be done outside of Scrollview. As scrollview is scrolled, this value actually changes, so we should only record it when the view first appears.
+            .onAppear {
                 calendarFrame = proxy.frame(in: .named("CalendarView"))
-                  .offsetBy(dx: 0, dy: eventOffset)
-                print("Frame set. New minY: \(calendarFrame.minY)")
-                print("Area compare 1. Calendar height: \(proxy.frame(in: .named("Calendar")).height)")
-                print("Area compare 2. CalendarView height: \(calendarFrame.height)")
+                  .offsetBy(dx: 0, dy: 0 - calendarOffset)
               }
 //            EventView(area: proxy,
 //                      wasLongPressed: $eventWasLongPressed,
 //                      isDraggable: $eventIsDraggable)
           } //: GeometryReader
-          .onPreferenceChange(ScrollViewOffsetPreferenceKey.self) { value in
-            eventOffset = value
-          }
+
         } //: ZStack
         // coordinateSpace should not be attached to ScrollView, because it gets smaller as we scroll down, for some reason. Placing it in child ZStack is fine.
         .coordinateSpace(name: "Calendar")
       } //: Scrollview
+      // This frame constrains Scrollview relative to other elements and thus sets our view into Scrollview, sort of like a peeping hole. We can set this to whatever we want. But it should be something smaller or equal to screen height.
+      .frame(height: visibleCalendarFrame)
 
-      // Once calendar frame has been recorded, we can show a draggable view
+      // Once calendar frame has been recorded, we can show a draggable view.
       if calendarFrame != CGRect(x: 0, y: 0, width: 0, height: 0) {
-        DraggableEventView(parentFrame: $calendarFrame,
-                           wasLongPressed: $eventWasLongPressed,
-                           isDraggable: $eventIsDraggable)
-        .offset(y: eventOffset)
+          DraggableEventView(parentFrame: calendarFrame,
+                             visibleCalendarFrameHeight: visibleCalendarFrame,
+                             wasLongPressed: $eventWasLongPressed,
+                             isDraggable: $eventIsDraggable)
+          // Event should be offset by the amout that we scroll the underlying scrollview. That way, it appears to be in the same position relative to the scrollview.
+          .offset(y: calendarOffset)
+          // This frame sets the maximum reach of DraggableEventView and should be equal to the total height of calendar view. Without this, the maximum frame would be set by the parentZStack, which has a default height of screensize - safe areas. This would mess up drag gestures, as the event view would not render in sizes larger than this size.
+          .frame(height: calendarFrame.height)
       }
+
+      // Header and footer, with space in between. This should have higher zIndex than Scrollview and DraggableEventView
+      VStack {
+        Rectangle().fill(.gray)
+        Spacer(minLength: visibleCalendarFrame)
+        Rectangle().fill(.gray)
+      }
+
     } //: ZStack with scrollview and overlay view
     .coordinateSpace(name: "CalendarView")
   } //: body
