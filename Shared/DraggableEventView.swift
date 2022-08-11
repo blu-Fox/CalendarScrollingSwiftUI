@@ -24,6 +24,7 @@ import SwiftUI
   // (d) LongPress elsewhere would repat the process.
   // (e) LongPress on "normal" event will bring up draggable event (normal event will dim slightly)
   // (f) If two "normal" events overlap, their position.x and width should change
+  // (g) Scrollview should scroll automatically if we're near the edge.
 #warning("To continue, see point 7 above.")
 
 struct DraggableEventView: View {
