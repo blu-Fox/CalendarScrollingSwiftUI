@@ -129,7 +129,6 @@
 				DD2A59AC28956A6C00C5656D /* CalendarView.swift */,
 				DD2A59B2289598E700C5656D /* RowView.swift */,
 				DD9A5B8428A134DB009C2FBE /* DraggableEventView.swift */,
-				DD2A59AF2895983200C5656D /* EventView.swift */,
 				DD4272B52948AAF200D1D1D6 /* TestViews */,
 				DD2A596628905E8C00C5656D /* Assets.xcassets */,
 			);
@@ -176,6 +175,7 @@
 		DD4272B52948AAF200D1D1D6 /* TestViews */ = {
 			isa = PBXGroup;
 			children = (
+				DD2A59AF2895983200C5656D /* EventView.swift */,
 				DD2A59A6289295B500C5656D /* DragAndExpandView.swift */,
 				DD2A59A0289129BE00C5656D /* DragInSpecificDirection.swift */,
 				DD2A59A3289261C000C5656D /* GeoReader.swift */,

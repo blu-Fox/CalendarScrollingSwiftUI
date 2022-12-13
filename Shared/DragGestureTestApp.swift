@@ -29,8 +29,8 @@
 // State draggingInAutoScrollArea(Bool)
 // State autoScrollOffset(CGFloat) = 0
 // onChange of triggerAutoScroll
-  // autoScrollOffset = abs(normalisedOffset - rowToScrollTo
-  // execute scroll
+  // autoScrollOffset = abs(normalisedOffset - rowToScrollTo)
+  // execute scroll using scrollTo
 // offset preference change
   // if draggingInAutoScrollArea == true && offset is at the row { (animation from 1st loop is finished and we need another)
     // triggerAutoScroll = UUID()

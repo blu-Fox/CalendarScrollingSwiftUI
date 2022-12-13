@@ -87,7 +87,7 @@ struct CalendarView: View {
                   // Normalised offset, because our inner view is larger (1200) to accomodate drag gestures. The top is pre-offset by (1200 - 700)/2 = 250. As a result, normalisedOffset begins at 0 on top of the visible scrollview. Also inverted the value (0-offset), so scrolling down produces a positive value.
                   let normalisedOffset = 0 - (calendarOffset - (calendarFrame.height - visibleCalendarFrame)/2)
                   print("NormalisedOffset: \(normalisedOffset)")
-                  // if animation from 1st loop is finished and we need another)
+                  // if animation from 1st loop is finished and we need another
                   // We want to check if normalisedOffset is close to one of the values in pointsArray
                   let offsetAtRow = pointsArray.contains { point in
                       if abs(point - normalisedOffset) < 0.5 {
@@ -127,7 +127,7 @@ struct CalendarView: View {
                            autoScrollOffset: $autoScrollOffset)
         // Event should be offset by the amout that we scroll the underlying scrollview. That way, it appears to be in the same position relative to the scrollview.
         .offset(y: calendarOffset)
-        // This frame sets the maximum reach of DraggableEventView and should be equal to the total height of calendar view. Without this, the maximum frame would be set by the parentZStack, which has a default height of screensize - safe areas. This would mess up drag gestures, as the event view would not render in sizes larger than this size.
+        // This frame sets the maximum reach of DraggableEventView and should be equal to the total height of calendar view. Without this, the maximum frame would be set by the parentZStack, which has a default height of (screensize - safe areas). This would mess up drag gestures, as the event view would not render in sizes larger than this size.
         .frame(height: calendarFrame.height)
       }
 
