@@ -5,8 +5,9 @@
 //  Created by Jan Stehlík on 26.07.2022.
 //
 #warning("README")
+// Abstract: This sample app attempts to replicate the daily timeline of iOS Calendar in SwiftUI. We are currently stuck on the issue of auto-scrolling when we are moving or stretching an event beyond the currently visible bounds of the timeline. The timeline should automatically scroll up/down. However, the current implementation (which uses scrollTo: method) is very choppy and unreliable. The logic of this implementation is described below.
 
-// MARK: Current logic that uses ScrollTo: method
+// MARK: Current logic that uses scrollTo: method
 // CalendarView holds variables triggerAutoScroll(UUID), draggingInAutoScrollArea(Bool) and autoScrollOffset(CGFloat)
 // DraggableEvent changes draggingInAutoScrollArea when we enter the "legitimate" area (top/bottom area of the calendar, where we need the timeline to automatically start scrolling up/down), and fires triggerAutoScroll. When the user stops dragging, or the drag position leaves the legitimate area, draggingInAutoScrollArea is switched off, and auto-scroll ends.
 // CalendarView detects onChange of triggerAutoScroll and initiates the first auto-scroll. It also calculates autoScrollOffset as a difference between current offset and the row to which we're auto-scrolling (using scrollTo: method).
