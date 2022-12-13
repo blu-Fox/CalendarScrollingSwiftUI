@@ -4,6 +4,7 @@
 //
 //  Created by Jan Stehlík on 30.07.2022.
 //
+// Abstract: View for a single row as part of the calendar.
 
 import SwiftUI
 

@@ -4,61 +4,73 @@
 //
 //  Created by Jan Stehlík on 30.07.2022.
 //
+// Abstract: View for a single event as part of the calendar timeline that we can drag around.
+
+// MARK: Log of improvements to DraggableEventView. I am currently stuck at point 7a
+// (1) SOLVED I tried using .updating and .onChange to update a specific variable when dragging/stretching. If the variable was on, scrollview would be off. However, this did not produce the intended result. After drag gesture ends, a subsequent attempt at a drag gesture scrolls the scrollview instead. Only holding for some time magically switches to the drag gesture. To solve this, I tried moving the dragged view outside of the scrollview. This seems to be the case in iOS calendar. When we drag or expand, the original view stays in scrollview and slightly loses opacity, and a bright overlay appears over the scrollview. This approach works!
+// (2) SOLVED By solving (1), we removed the event view from the parent coordinate space. So now, it cannot get the coordinates of Scrollview. To solve it, I tried passing the Scrollview frame around and into the event view. This indeed works.
+// (3) SOLVED After solving (1), gestures were still hardwired into the local space, which is what first appears on the screen. So I set gestures to the parent coordinate space. This made the numbers more sensible. A bigger problem was that event view refused to stretch beyond screen size - safe areas. It turns out the culprit was the parent ZStack of Calendar view, which contained everything and was just set to the default frame. Enlarging the frame for draggable view resolved this problem.
+// (5) SOLVED Solving (3) created new problems.
+  //  (a) stretch gesture continued beyond calendar view. I fixed it by limiting gesture to the visible part of calendar view (700).
+  // (b) drag onChanged worked fine, but onEnded had a weird frame: its minY was 100 larger, and its maxY 50 larger than Calendar view. This fixed itself after fixing (a).
+  // (c) bottomStretch had to be rewritten along the new implementation of topStretch. This was successfully rewritten.
+// (6) SOLVED Some small issue persisted in bottomStretch.onEnded. For some reason, it refused to auto-align to 1200. Turns out we only had 24 points, but we need 25. That is, point 0 + a point at the end of each row.
+// (7) TODO Dragging and stretching now works as it should. Next steps:
+  // MARK: (a) Scrollview should scroll automatically if we're dragging the event near the top/bottom edge.
+  // (b) LongPress on calendar should show a DraggableEvent in that location, with possibility to move it around (like iOS).
+  // (c) On Ended, draggable event should snap into place and turn into a "normal" event (at this point, iOS calendar brings up a sheet).
+  // (d) LongPress elsewhere would create another event.
+  // (e) LongPress on "normal" event (i.e. event that is part of the timeline) will bring up a draggable event ("normal" event will dim slightly)
+  // (f) If two "normal" events overlap, their position.x and width should change, so that both will exist side by side.
+  // (g) We should clean up the code. Create a model (Event) and viewModel(s). Use protocols.
 
 import SwiftUI
 
-// Removal of conflict between scrollview and event view:
-// (1) I tried using .updating and .onChange to update a specific variable when dragging/stretching. If the variable was on, scrollview would be off. However, this did not produce the intended result. After drag gesture ends, a subsequent attempt at a drag gesture scrolls the scrollview instead. Only holding for some time magically switches to the drag gesture
-// (2) I tried moving the dragged view outside of the scrollview. This seems to be the case in iOS calendar. When we drag or expand, the original view stays in scrollview and slightly loses opacity, and a bright overlay appears over the scrollview. AND IT WORKS!!!1!!1!1!1!!1!1
-// (3) However, we removed the event view from the parent coordinate space. So now, it cannot get the coordinates of Scrollview. To solve it, I tried passing the Scrollview frame around and into the event view. This indeed works.
-// (4) However, gestures were still hardwired into the local space, which is what first appears on the screen. So I set gestures to the parent coordinate space. This made the numbers more sensible. A bigger problem was that event view refused to stretch beyond screen size - safe areas. It turns out the culprit was the parent ZStack of Calendar view, which contained everything and was just set to the default frame. Enlarging the frame for draggable view resolved this problem.
-// (5) However, we now have new problems.
-  //  (a) stretch gesture now continues beyond calendar view. I fixed it by limiting gesture to the visible part of calendar view (700).
-  // (b) drag onChanged works fine, but onEnded has a weird frame: its minY is 100 larger, and its maxY 50 larger than Calendar view. This fixed itself after fixing (a).
-  // (c) bottomStretch should be rewritten along the new implementation of topStretch. This was successfully rewritten.
-// (6) Some small issue persists in bottomStretch.onEnded. For some reason, it refuses to auto-align to 1200. Turns out we only had 24 points, but we need 25: 0, and then a point at the end of each row.
-// (7) Dragging and stretching now (FINALLY) works as it should. Time to make it a bit useful.
-  // (a) First, we should clean all this up. Create a model (Event) and viewModel(s) (Protocols - come on, you wanna be a pro) to store all these values and functions.
-  // (b) LongPress on calendar should show a DraggableEvent in that location, with possibility to move it around (like iOS).
-  // (c) On Ended, draggable event should snap into place and turn into a "normal" event (at this point, iOS calendar brings up a sheet).
-  // (d) LongPress elsewhere would repat the process.
-  // (e) LongPress on "normal" event will bring up draggable event (normal event will dim slightly)
-  // (f) If two "normal" events overlap, their position.x and width should change
-  // (g) Scrollview should scroll automatically if we're near the edge.
-#warning("To continue, see point 7 above.")
-
 struct DraggableEventView: View {
-  // Current position of the event. Will be updated once event appears
+  // position: current position of the event. Will be updated once event appears
   @State var position: CGPoint = .zero
-  // Current height
+  // height: current height
   @State var height: CGFloat = 200
-  // Minimum height
+  // minHeight: minimum height
   let minHeight: CGFloat = 100
-  // Original height before the start of a gesture. Used to calculate view position when stretching it up/down. MinHeight is the absolute minimum, originalHeight changes after each gesture ends.
+  // originalHeight: original height before the start of a gesture. Used to calculate view position when stretching it up/down. MinHeight is the absolute minimum, originalHeight changes after each gesture ends.
   @State var originalHeight: CGFloat?
-  // used to calculate view position when stretching it up/down
+  // originalPosition: used to calculate view position when stretching it up/down
   @State var originalPosition: CGPoint?
-  // Bounds in which the object can be moved
+  // parentFrame: bounds in which the object can be moved. These are set when CalendarView first appears.
   let parentFrame: CGRect
-  // The height of the visible calendar view (700 in this example). We can adapt gestures to only work within this value, relative to the parentFrame. Hardcoded, it would be between 250 and 950 in this example, because parentFrame is 1200 high and the calendar view is set in the middle of parentFrame.
+  // visibleCalendarFrameHeight: the height of the visible calendar view (700 in this example). We can adapt gestures to only work within this value, relative to the parentFrame. Hardcoded, it would be between 250 and 950 in this example, because parentFrame is 1200 high and the calendar view is set in the middle of parentFrame.
   let visibleCalendarFrameHeight: CGFloat
-  // Determines if the object was longPressed and can be moved around. Tapping anywhere in the parent view turns this off and makes the view unmovable (like in iOS calendar)
+  // wasLongPressed: determines if the object was longPressed and can be moved around. Tapping anywhere in the parent view turns this off and makes the view unmovable (like in iOS calendar)
   @Binding var wasLongPressed: Bool
-  // Determines if the view is draggable. This second var works in tandem with wasLongPressed. 2 vars are needed because there are 2 gesture modifiers, because Gesture and Sequenced Gesture are not the same type. So we cannot use a ternary operator.
+  // isDraggable: determines if the view is draggable. This second var works in tandem with wasLongPressed. 2 vars are needed because there are 2 gesture modifiers, because Gesture and Sequenced Gesture are not the same type. So we cannot use a ternary operator.
   @Binding var isDraggable: Bool
-  // array of points into which events should auto-align. Offset by rowHeight/2 so it auto-aligns even if position is slightly above the row area.
+  // pointsArray: array of points into which events should auto-align. Offset by rowHeight/2 so it auto-aligns even if position is slightly above the row area.
   var pointsArray: [CGFloat] {
     var array: [CGFloat] = []
-    for row in 0...24 { // 25 points in total (number of rows, plus 0 point)
-      array.append(CGFloat(0 + 50*row)) // 50 is same as row height
+    // 25 points in total (0 point + number of rows)
+    for row in 0...24 {
+      // 50 is the same as row height
+      array.append(CGFloat(0 + 50*row))
     }
     return array
   }
-  // gesture state, to execute different code at different situations
+  // gestureState: gesture state to execute different code at different situations
   @State var gestureState: DragGestureState = .inactive
-  // Distance between event position and gesture location. Useful for dragging the event without it unpleasantly jumping to the current gesture location.
+  // gesturePositionDistanceX/Y: distance between event position and gesture location. Useful for dragging the event without it unpleasantly jumping to the current gesture location.
   @State var gesturePositionDistanceY: CGFloat = 0
   @State var gesturePositionDistanceX: CGFloat = 0
+
+  // calendarOffset: current scrollview offset of the calendar.
+  var calendarOffset: CGFloat
+
+  // For auto-scroll
+  // draggingInAutoScrollArea: auto-scrolls should keep firing
+  @Binding var draggingInAutoScrollArea: Bool
+  // triggerAutoScroll: fire auto-scroll to nearest row outside of the visible boundary
+  @Binding var triggerAutoScroll: UUID
+  // autoScrollOffset: to set correct position when auto-scrolling
+  @Binding var autoScrollOffset: CGFloat
 
   var body: some View {
     ZStack {
@@ -102,7 +114,6 @@ struct DraggableEventView: View {
   var drag: some Gesture {
     DragGesture(coordinateSpace: .named("CalendarView"))
       .onChanged { value in
-
         // Gesture updates for the first time: get distance between gesture and position. This distance will inform this and subsequent updates, so the view does not unpleasantly jump towards the centre of the gesture.
         if gestureState == .inactive {
           gesturePositionDistanceY = abs(value.location.y - position.y)
@@ -110,46 +121,49 @@ struct DraggableEventView: View {
           gestureState = .updating
         } //: if
 
+        // AUTO-SCROLL
+        // user moved into legitimate area for the first time
+        if value.location.y <= 275 && draggingInAutoScrollArea == false {
+          draggingInAutoScrollArea = true
+          triggerAutoScroll = UUID()
+        // user moved outside of legitimate area
+        } else {
+          draggingInAutoScrollArea = false
+        }
+
         // Execute the rest of the code: position view to the gesture, offset by the original distance between gesture and position (recorded above).
         // Set X
-        // Gesture is left of position
         if value.location.x < position.x {
+          // Gesture is left of position
           position.x = (value.location.x + gesturePositionDistanceX)
-        // Gesture is right of position
         } else {
+          // Gesture is right of position
           position.x = (value.location.x - gesturePositionDistanceX)
         }
         // Set Y
-        // Gesture is above the position
-        if value.location.y < position.y {
-          position.y = (value.location.y + gesturePositionDistanceY)
-        // gesture is below the position
+        if value.location.y <= 275 {
+          withAnimation {
+            position.y = value.location.y - calendarOffset
+          }
         } else {
-          position.y = (value.location.y - gesturePositionDistanceY)
+          if value.location.y < position.y {
+            // Gesture is above the position
+            position.y = value.location.y + gesturePositionDistanceY
+          } else {
+            // gesture is below the position
+            position.y = value.location.y - gesturePositionDistanceY
+          }
+          print("Gesture location: \(value.location.y)")
+          print("Position: \(position.y)")
         }
 
-        // VERSION WITH HARD EDGES. ONCE EVENT REACHES THE EDGE, IT STOPS RIGHT THERE.
-        // A bug remains where locationY changes if we keep dragging above/below the static centre of the event. Fix if needed.
-//        let locationY: CGFloat = (value.location.y <= position.y) ? value.location.y + gesturePositionDistanceY : value.location.y - gesturePositionDistanceY
-//        let location: CGPoint = CGPoint(x: value.location.x, y: locationY)
-//        // calculate if gesture is within the parent area reduced by size/2 of the event. That way, borders of the event will not pass beyond the parent area.
-//        if pointWithinBounds(position: location, bounds: maxPositionArea(area: area.frame(in: .named("DraggableEvent")), eventWidth: UIScreen.main.bounds.width, eventHeight: height)) {
-//            if value.location.y <= position.y { // gesture is above the position
-//              position.y = (value.location.y + gesturePositionDistanceY)
-//            } else { // gesture is below the position
-//              position.y = (value.location.y - gesturePositionDistanceY)
-//            }
-//        } else { // event is out of bounds
-//          // furthest location
-//          if value.location.y < area.frame(in: .local).midY { // we are at the top border.
-//            position.y = area.frame(in: .local).minY + height/2
-//          } else { // we are at the bottom border
-//            position.y = area.frame(in: .local).maxY - height/2
-//          }
-//        } //: if
+        autoScrollOffset = 0
 
       } //: onchanged
       .onEnded { value in
+        // End auto-scroll
+        draggingInAutoScrollArea = false
+
         // Auto-align. X is static (middle of screen), Y must be calculated.
         // (1) Get array of numbers where:
           // (a) number >= parentFrame.minY + height/2 (so that new position does not reach above calendar. Calendar minY is 0 before scrolling, but could be something else after scroll)
@@ -281,7 +295,7 @@ struct DraggableEventView: View {
 
 
   // calculates the maximum parent area in which the event's position can move. It does so by detracting size/2 of the event area. That way, borders of the event area will not go past the parent area.
-  // WARNING: this is implemented for Y axis only! Width remains the same in this use case.
+  // NOTE: this is implemented for Y axis only! Width remains the same in this use case.
   func maxPositionArea(area: CGRect, eventWidth: CGFloat, eventHeight: CGFloat) -> CGRect {
     // let originX: CGFloat = area.origin.x + eventWidth/2
     let originY: CGFloat = area.origin.y + eventHeight/2
@@ -297,7 +311,7 @@ struct DraggableEventView: View {
   }
 
   // checks if a given CGRect is within a CGRect
-  // IMPORTANT: some of this should possibly not be >=, because once the event borders are equal to parent area borders, we want the positioning to stop.
+  // NOTE: some of this should possibly not be >= but >, because once the event borders are equal to parent area borders, we want the positioning to stop.
   func rectWithinBounds(area: CGRect, bounds: CGRect) -> Bool {
     if area.minX >= bounds.minX &&
         area.maxX <= bounds.maxX &&

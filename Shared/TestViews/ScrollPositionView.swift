@@ -5,7 +5,7 @@
 //  Created by Jan Stehlík on 06.08.2022.
 //
 
-// view that demonstrates how to read offset of child view using preference keys.
+// View that demonstrates how to read offset of child view using preference keys.
 import SwiftUI
 
 struct ScrollPositionView: View {

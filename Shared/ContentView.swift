@@ -4,7 +4,7 @@
 //
 //  Created by Jan Stehlík on 26.07.2022.
 //
-
+// Abstract: main view of the app
 
 import SwiftUI
 
