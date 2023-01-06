@@ -20,7 +20,8 @@
  - As normalisedOffset aligns with the appropriate row, triggerAutoScroll is updated again. This happens if offset is aligned with any row && draggingInAutoScrollArea == true.
  - CalendarView detects onChange of triggerAutoScroll and initiates another auto-scroll.
  
-## Pseudocode summary of CalendarView (see comments in source code for more detail)
+## Pseudocode summary of CalendarView
+See comments in source code for more detail
 ```
 State triggerAutoScroll(UUID)
 State draggingInAutoScrollArea(Bool)
@@ -34,7 +35,8 @@ offset preference change
     triggerAutoScroll = UUID()
 ```
 
-## Pseudocode summary of DraggableEventView (see comments in source code for more detail)
+## Pseudocode summary of DraggableEventView
+See comments in source code for more detail
 ```
 Binding draggingInAutoScrollArea(Bool)
 Binding triggerAutoScroll(UUID)
