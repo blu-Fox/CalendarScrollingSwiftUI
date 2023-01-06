@@ -5,7 +5,7 @@
 - We are currently stuck on the issue of auto-scrolling when we are moving or stretching an event beyond the currently visible bounds of the timeline. The timeline should automatically scroll up/down. However, the current implementation (which uses scrollTo: method) is very choppy and unreliable. The logic of this implementation is described below.
 - One idea that I wanted to test is to ditch animations and scrollTo, and instead to (somehow) set the calendar timeline position using position or offset modifiers. I have not played around with this yet.
 
-## To see the problem:
+## To replicate the problem:
 - NOTE: Currently, we only implemented the logic for auto-scrolling up while the event is being dragged. Once the problem is resolved, the plan is to implement the logic also for auto-scrolling down, as well as for stretching/contracting the event.
  1) Drag your finger to scroll the calendar timeline down by a few rows.
  2) Long press on the event to make it draggable
@@ -20,26 +20,28 @@
  - As normalisedOffset aligns with the appropriate row, triggerAutoScroll is updated again. This happens if offset is aligned with any row && draggingInAutoScrollArea == true.
  - CalendarView detects onChange of triggerAutoScroll and initiates another auto-scroll.
  
-## Summary of CalendarView
+## Pseudocode summary of CalendarView (see comments in source code for more detail)
 ```
 State triggerAutoScroll(UUID)
 State draggingInAutoScrollArea(Bool)
 State autoScrollOffset(CGFloat) = 0
-onChange of triggerAutoScroll
+...
+onChange of triggerAutoScroll (we should auto-scroll)
   autoScrollOffset = abs(normalisedOffset - rowToScrollTo)
-  execute scroll using scrollTo
+  execute scroll using scrollTo method
 offset preference change
-  if draggingInAutoScrollArea == true && offset is at the row { (animation from 1st loop is finished and we need another)
+  if draggingInAutoScrollArea == true && offset is at the row { (animation from 1st loop of auto-scroll is finished and we need another)
     triggerAutoScroll = UUID()
 ```
 
-## Summary of DraggableEventView
+## Pseudocode summary of DraggableEventView (see comments in source code for more detail)
 ```
 Binding draggingInAutoScrollArea(Bool)
 Binding triggerAutoScroll(UUID)
 Binding autoScrollOffset(CGFloat)
+...
 onChanged (with every gesture update)
-  if in legitimate area && draggingInAutoScrollArea == false { (user moved into legitimate area for the first time)
+  if in legitimate area && draggingInAutoScrollArea == false (user moved into legitimate area for the first time)
     draggingInAutoScrollArea = true
     triggerAutoScroll = UUID()
   else (user moved outside of legitimate area)
