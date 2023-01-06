@@ -97,7 +97,7 @@ struct DraggableEventView: View {
                          y: 200)
       originalPosition = position
     } //: OnAppear
-    // .position must be placed after onAppear to function properly
+    // position modifier must be placed after onAppear to function properly
     .position(position)
     // 2 modifiers bc different return types (Gesture and SequencedGesture)
     .gesture(isDraggable ? nil : longPress.sequenced(before: drag))
@@ -121,9 +121,9 @@ struct DraggableEventView: View {
           gestureState = .updating
         } //: if
 
-        // AUTO-SCROLL
-        // user moved into legitimate area for the first time
-        if value.location.y <= 275 && draggingInAutoScrollArea == false {
+        // AUTO-SCROLL of calendar timeline
+        // user moved into legitimate area for the first time. This area is the top/bottom edge of the visible timeline. In this sample, it is 25 points from the edge, i.e. between 250-275, and 925-950.
+        if (value.location.y <= 275 || value.location.y >= 925) && draggingInAutoScrollArea == false {
           draggingInAutoScrollArea = true
           triggerAutoScroll = UUID()
         // user moved outside of legitimate area
@@ -131,7 +131,7 @@ struct DraggableEventView: View {
           draggingInAutoScrollArea = false
         }
 
-        // Execute the rest of the code: position view to the gesture, offset by the original distance between gesture and position (recorded above).
+        // Execute the rest of the code relating to the new position of the draggable event view: position view to the gesture, offset by the original distance between gesture and position (recorded above).
         // Set X
         if value.location.x < position.x {
           // Gesture is left of position
@@ -142,6 +142,10 @@ struct DraggableEventView: View {
         }
         // Set Y
         if value.location.y <= 275 {
+          withAnimation {
+            position.y = value.location.y - calendarOffset
+          }
+        } else if value.location.y >= 925 {
           withAnimation {
             position.y = value.location.y - calendarOffset
           }
