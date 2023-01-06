@@ -45,3 +45,4 @@ NOTE: Currently, we only implemented the logic for auto-scrolling up while the e
 //   autoScrollOffset = 0
 // onEnded (gesture ended)
 //   draggingInAutoScrollArea = false
+
